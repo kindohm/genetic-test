@@ -1,0 +1,147 @@
+<html>
+
+<body>
+
+    <p><button id="goButton">Go</button></p>
+    <script src="node_modules/genetic-js/js/genetic-0.1.14.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const goButton = document.getElementById('goButton');
+
+            goButton.addEventListener('click', () => {
+
+                var config = {
+                    "iterations": 4000
+                    , "size": 250
+                    , "crossover": 0.3
+                    , "mutation": 0.3
+                    , "skip": 20
+                };
+
+                var userData = {
+                    "solution": {
+                        topLeft: { x: 10, y: 10 },
+                        topRight: { x: 90, y: 10 },
+                        bottomLeft: { x: 10, y: 90 },
+                        bottomRight: { x: 10, y: 90 }
+                    }
+                };
+
+                let genetic = Genetic.create();
+                genetic.optimize = Genetic.Optimize.Maximize;
+                genetic.select1 = Genetic.Select1.Tournament2;
+                genetic.select2 = Genetic.Select2.Tournament2;
+
+                genetic.seed = function () {
+                    var getRandomInt = function (min, max) {
+                        min = Math.ceil(min);
+                        max = Math.floor(max);
+                        return Math.floor(Math.random() * (max - min + 1)) + min;
+                    };
+
+                    return {
+                        topLeft: { x: getRandomInt(0, 100), y: getRandomInt(0, 100) },
+                        topRight: { x: getRandomInt(0, 100), y: getRandomInt(0, 100) },
+                        bottomLeft: { x: getRandomInt(0, 100), y: getRandomInt(0, 100) },
+                        bottomRight: { x: getRandomInt(0, 100), y: getRandomInt(0, 100) }
+                    };
+                };
+
+                genetic.mutate = function (entity) {
+                    // var x = Math.random(1, 4);
+                    // var prop = '';
+                    // if (x === 1) {
+                    //     prop = 'topLeft';
+                    // } else if (x === 2) {
+                    //     prop = 'topRight';
+                    // } else if (x === 3) {
+                    //     prop = 'bottomLeft';
+                    // } else {
+                    //     prop = 'bottomRight';
+                    // }
+
+                    var newEntity = Object.assign({}, entity);
+                    newEntity.topLeft.x += (1 * (Math.random() > 0.5 ? 1 : -1));
+                    newEntity.topLeft.y += (1 * (Math.random() > 0.5 ? 1 : -1));
+                    newEntity.topRight.x += (1 * (Math.random() > 0.5 ? 1 : -1));
+                    newEntity.topRight.y += (1 * (Math.random() > 0.5 ? 1 : -1));
+                    newEntity.bottomLeft.x += (1 * (Math.random() > 0.5 ? 1 : -1));
+                    newEntity.bottomLeft.y += (1 * (Math.random() > 0.5 ? 1 : -1));
+                    newEntity.bottomRight.x += (1 * (Math.random() > 0.5 ? 1 : -1));
+                    newEntity.bottomRight.y += (1 * (Math.random() > 0.5 ? 1 : -1));
+
+                    return newEntity;
+                };
+
+                genetic.crosover = function (mother, father) {
+console.log('crossing over');
+                    var son = {
+                        topLeft: (mother.topLeft + father.topLeft * 2) / 3,
+                        topRight: (mother.topRight + father.topRight * 2) / 3,
+                        bottomLeft: (mother.bottomLeft + father.bottomLeft * 2) / 3,
+                        bottomRight: (mother.bottomRight + father.bottomRight * 2) / 3,
+                    }
+
+                    var daughter = {
+                        topLeft: (mother.topLeft * 2 + father.topLeft) / 3,
+                        topRight: (mother.topRight * 2 + father.topRight) / 3,
+                        bottomLeft: (mother.bottomLeft * 2 + father.bottomLeft) / 3,
+                        bottomRight: (mother.bottomRight * 2 + father.bottomRight) / 3,
+                    }
+
+                    return [son, daughter];
+
+                };
+
+                genetic.fitness = function (entity) {
+                    var solution = this.userData["solution"];
+
+                    var topLeftDistance = Math.pow(Math.pow(entity.topLeft.x - solution.topLeft.x, 2) +
+                        Math.pow(entity.topLeft.y - solution.topLeft.y, 2), 0.5);
+                    var topRightDistance = Math.pow(Math.pow(entity.topRight.x - solution.topRight.x, 2) +
+                        Math.pow(entity.topRight.y - solution.topRight.y, 2), 0.5);
+                    var bottomLeftDistance = Math.pow(Math.pow(entity.bottomLeft.x - solution.bottomLeft.x, 2) +
+                        Math.pow(entity.bottomLeft.y - solution.bottomLeft.y, 2), 0.5);
+                    var bottomRightDistance = Math.pow(Math.pow(entity.bottomRight.x - solution.bottomRight.x, 2) +
+                        Math.pow(entity.bottomRight.y - solution.bottomRight.y, 2), 0.5);
+
+                    var totalDistance = topLeftDistance + topRightDistance + bottomLeftDistance + bottomRightDistance;
+                    var result = totalDistance * -1;
+                    
+                    return result;
+
+                };
+
+                genetic.generation = function (pop, generation, stats) {
+                    var solution = this.userData["solution"];
+                    var entity = pop[0].entity;
+
+                    var match = entity.topLeft.x === solution.topLeft.x &&
+                        entity.topLeft.y === solution.topLeft.y &&
+                        entity.topRight.x === solution.topRight.x &&
+                        entity.topRight.y === solution.topRight.y &&
+                        entity.bottomLeft.x === solution.bottomLeft.x &&
+                        entity.bottomLeft.y === solution.bottomLeft.y &&
+                        entity.bottomRight.x === solution.bottomRight.x &&
+                        entity.bottomRight.y === solution.bottomRight.y;
+
+                    return !match;
+                };
+
+                genetic.notification = function (pop, generation, stats, isFinished) {
+                    var e = pop[0].entity;
+
+                    console.log(e.topLeft.x + ', ' + e.topLeft.y + '; ' +
+                    e.topRight.x + ', ' + e.topRight.y + '; ' +
+                    e.bottomLeft.x + ', ' + e.bottomLeft.y + '; ' + 
+                    e.bottomRight.x + ', ' + e.bottomRight.y);
+                };
+
+                genetic.evolve(config, userData);
+
+            });
+        });
+    </script>
+</body>
+
+</html>
